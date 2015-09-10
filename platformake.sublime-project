@@ -1,0 +1,44 @@
+{
+	"build_systems":
+	[
+		{
+			"cmd": "make --no-print-directory -C\"$project_path\" all",
+			"name": "Build platformake"
+		}
+	],
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"name": "Source",
+			"path": "src"
+		},
+		{
+			"follow_symlinks": true,
+			"name": "Test source",
+			"path": "test",
+			"file_exclude_patterns":
+			[
+				"*.exe",
+				"*.out"
+			]
+		},
+		{
+			"file_include_patterns":
+			[
+				"*Makefile*"
+			],
+			"folder_exclude_patterns":
+			[
+				"*"
+			],
+			"follow_symlinks": true,
+			"name": "Makefiles",
+			"path": "."
+		}
+	],
+	"settings":
+	{
+		"tab_size": 2
+	}
+}

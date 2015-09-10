@@ -26,3 +26,12 @@
 *.exe
 *.out
 *.app
+
+
+# Our stuff
+out/
+test/out/
+external/include/
+
+*.sublime-toks
+*.sublime-workspace
