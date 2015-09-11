@@ -25,18 +25,10 @@
 
 
 #include <string>
-#include <vector>
-#include "sysprops.hpp"
+#include <regex>
 
 
-struct settings_t {
-	bool verbose                    = false;
-	bool delete_tempfile            = true;
-	std::string make_command        = "make";
-	std::string make_arguments      = "";
-	std::string make_file           = "Makefile";
-	std::string temporary_directory = system_temporary_directory;
-};
-
-
-settings_t load_settings(int argc, const char ** argv);
+template <class CharT, class... StrTargs>
+void replaceAll(std::basic_string<CharT, StrTargs...> & str, const std::basic_string<CharT, StrTargs...> & from, const std::basic_string<CharT, StrTargs...> & to) {
+	str = std::regex_replace(str, std::basic_regex<CharT>(from), to);
+}

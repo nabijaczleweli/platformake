@@ -29,19 +29,13 @@
 using namespace std;
 
 
-const char * system_temporary_directory() noexcept {
-	static const char * value = []() {
-		const char * tmp{};
+static const char * envvar_or(initializer_list<const char *> from, const char * ifnotfound) {
+	for(const auto envvar : from)
+		if(const char * val = getenv(envvar))
+			return val;
 
-		for(auto envvar : {"TEMP", "TMP"})
-			if((tmp = getenv(envvar)))
-				break;
-
-		if(!tmp)  // TEMP always set on Windows systems, so this can only be a Linuxish one
-			tmp = "/tmp";
-
-		return tmp;
-	}();
-
-	return value;
+	return ifnotfound;
 }
+
+
+const char * const system_temporary_directory = envvar_or({"TEMP", "TMP"}, "/tmp");  // TEMP always set on Windows systems, might not be on Linuxish

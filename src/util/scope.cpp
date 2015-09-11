@@ -21,22 +21,9 @@
 //  DEALINGS IN THE SOFTWARE.
 
 
-#pragma once
+#include "scope.hpp"
 
 
-#include <string>
-#include <vector>
-#include "sysprops.hpp"
-
-
-struct settings_t {
-	bool verbose                    = false;
-	bool delete_tempfile            = true;
-	std::string make_command        = "make";
-	std::string make_arguments      = "";
-	std::string make_file           = "Makefile";
-	std::string temporary_directory = system_temporary_directory;
-};
-
-
-settings_t load_settings(int argc, const char ** argv);
+quickscope_wrapper::~quickscope_wrapper() {
+	destructor();
+}

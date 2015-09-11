@@ -21,22 +21,26 @@
 //  DEALINGS IN THE SOFTWARE.
 
 
-#pragma once
+#include "file.hpp"
+#include <algorithm>
+#include <chrono>
+#include <random>
 
 
-#include <string>
-#include <vector>
-#include "sysprops.hpp"
+using namespace std;
+using namespace std::chrono;
 
 
-struct settings_t {
-	bool verbose                    = false;
-	bool delete_tempfile            = true;
-	std::string make_command        = "make";
-	std::string make_arguments      = "";
-	std::string make_file           = "Makefile";
-	std::string temporary_directory = system_temporary_directory;
-};
+string tempname(size_t length) {
+	static const char filename_characters[]              = "aBcDeFgHiJkLmNoPqQsTuVwXyZ01234567890-_";
+	static const constexpr auto filename_characters_size = sizeof filename_characters - 1;
+	static mt19937 engine(high_resolution_clock::now().time_since_epoch().count());  // random_device is deterministic on Windows
+	static uniform_int_distribution<size_t> distribution(0, filename_characters_size - 1);
+	static const auto generator = [&]() { return filename_characters[distribution(engine)]; };
 
-
-settings_t load_settings(int argc, const char ** argv);
+	string retval(length, '\0');
+	generate(begin(retval), end(retval), generator);
+	while(retval[0] == '-' || retval[0] == '.')
+		retval[0] = generator();
+	return retval;
+}

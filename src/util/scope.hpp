@@ -24,19 +24,11 @@
 #pragma once
 
 
-#include <string>
-#include <vector>
-#include "sysprops.hpp"
+#include <functional>
 
 
-struct settings_t {
-	bool verbose                    = false;
-	bool delete_tempfile            = true;
-	std::string make_command        = "make";
-	std::string make_arguments      = "";
-	std::string make_file           = "Makefile";
-	std::string temporary_directory = system_temporary_directory;
+struct quickscope_wrapper {
+	std::function<void()> destructor;
+
+	~quickscope_wrapper();
 };
-
-
-settings_t load_settings(int argc, const char ** argv);

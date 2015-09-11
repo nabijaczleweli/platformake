@@ -26,10 +26,36 @@
 #include <iostream>
 #include <iterator>
 #include <sstream>
+#include <regex>
 
 
 using namespace std;
 using namespace TCLAP;
+
+
+static string constrained_make_arguments(const vector<string> & args) {
+	static const regex longarg_regex("--(make)?file=.*");
+
+	string retval;
+
+	for(auto itr = cbegin(args), enditr = cend(args); itr != enditr; ++itr) {
+		const string & val = *itr;
+
+		if(val.find("-f") == 0) {  // make -f
+			if(val.size() == 2)      //-f Makefile vs -fMakefile
+				++itr;
+
+			continue;
+		}
+
+		if(!regex_search(val, longarg_regex)) {
+			retval += val;
+			retval.push_back(' ');
+		}
+	}
+
+	return retval;
+}
 
 
 settings_t load_settings(int argc, const char ** argv) {
@@ -38,9 +64,10 @@ settings_t load_settings(int argc, const char ** argv) {
 	try {
 		CmdLine command_line("platformake -- a multiplatforming make proxy", ' ', __DATE__ " " __TIME__);
 		SwitchArg verbose("v", "verbose", "Turns on verbose output", command_line, ret.verbose);
+		SwitchArg delete_tempfile("", "no-delete-temporary", "Do not remove the temporary Makefile", command_line, ret.delete_tempfile);
 		ValueArg<string> make_file("f", "file", "read FILE as Makefile to transform", false, ret.make_file, "FILE", command_line);
-		ValueArg<string> temporary_directory("t", "temp", "use DIR instead of a System-wide temporary directory for storing temporary Makefiles", false,
-		                                     ret.temporary_directory, "DIR", command_line);
+		ValueArg<string> temporary_directory("", "temporary-directory", "use DIR instead of a System-wide temporary directory for storing temporary Makefiles",
+		                                     false, ret.temporary_directory, "DIR", command_line);
 		ValueArg<string> make_command("m", "make-command", "Specifies the command used to invoke GNU make", false, ret.make_command, "path to make exec",
 		                              command_line);
 		UnlabeledMultiArg<string> make_arguments("make-arguments", "arguments passed to GNU make, e.g. '-j'", false, "additional make arguments", command_line);
@@ -48,13 +75,13 @@ settings_t load_settings(int argc, const char ** argv) {
 		command_line.parse(argc, argv);
 
 		ret.verbose             = verbose.getValue();
+		ret.delete_tempfile     = delete_tempfile.getValue();
 		ret.make_command        = make_command.getValue();
 		ret.make_file           = make_file.getValue();
 		ret.temporary_directory = temporary_directory.getValue();
 
 		ostringstream margs;
-		copy(begin(make_arguments.getValue()), end(make_arguments.getValue()), ostream_iterator<string>(margs, " "));
-		ret.make_arguments = margs.str();
+		ret.make_arguments = constrained_make_arguments(make_arguments.getValue());
 	} catch(const ArgException & e) {
 		cerr << argv[0] << ": error: parsing arguments failed (" << e.error() << ") for argument " << e.argId() << "\ntrying to continue anyway.";
 	}

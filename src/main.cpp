@@ -21,10 +21,14 @@
 //  DEALINGS IN THE SOFTWARE.
 
 
+#include "util/string.hpp"
+#include "util/scope.hpp"
+#include "util/file.hpp"
 #include "settings.hpp"
 #include "sysprops.hpp"
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <cstdlib>
 #include <cstdio>
 
@@ -36,13 +40,38 @@ int main(int argc, const char ** argv) {
 	settings_t settings = load_settings(argc, argv);
 
 	if(settings.verbose) {
-		cout << "Using make command: \"" << settings.make_command << "\"\n";
-		cout << "Using temporary directory: \"" << settings.temporary_directory << "\"\n";
-		cout << (settings.make_command + ' ' + settings.make_arguments + "-f " + settings.temporary_directory + "/ASDFasdf").c_str() << '\n';
-		cout << tmpnam(nullptr) << '\n';
+		clog << "v: GNU make command:            \"" << settings.make_command << "\"\n";
+		clog << "v: GNU make explicit arguments: \"" << settings.make_arguments << "\"\n";
+		clog << "v: temporary directory:         \"" << settings.temporary_directory << "\"\n";
+		clog << "v: preprocessed Makefile:       \"" << settings.make_file << "\"\n";
 	}
 
-	ofstream file(settings.temporary_directory + "/ASDFasdf");
-	file << "all:\n\techo git gud" << endl;
-	system((settings.make_command + ' ' + settings.make_arguments + "-f " + settings.temporary_directory + "/ASDFasdf").c_str());
+
+	string tempfile_path = settings.temporary_directory + "/platformake_" + tempname();
+	quickscope_wrapper tempfile_delete{[&]() {
+		if(settings.delete_tempfile)
+			if(remove(tempfile_path.c_str()))
+				cerr << "\nDeleting temporary file \"" << tempfile_path << "\" failed.\n";
+	}};
+
+
+	if(settings.verbose)
+		clog << "v: temporary Makefile path:     \"" << tempfile_path << "\"\n\n";
+
+	/*istringstream iss("all:\n"
+	                  "\techo git gud %EXEC");*/
+	ifstream iss(settings.make_file);
+
+	ofstream file(tempfile_path);
+	for(string line; getline(iss, line);) {
+		if(!line.empty()) {
+			replaceAll(line, "%EXEC"s, ".exe"s);
+			file << line << '\n';
+		}
+	}
+
+	file.flush();
+	int retval = system((settings.make_command + ' ' + settings.make_arguments + " -f \"" + tempfile_path + '"').c_str());
+
+	return retval;
 }

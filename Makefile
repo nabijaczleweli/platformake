@@ -42,10 +42,10 @@ deps :
 	cp external/tclap/include/tclap/*.h $(INCLUDE)tclap
 
 exe : $(foreach src,$(SOURCES),$(BUILD)$(src)$(OBJ))
-	$(CPP) $(CPPAR) -o$(BUILD)platformake$(EXE) $^
+	$(CXX) $(CXXAR) -o$(BUILD)platformake$(EXE) $^
 	$(STRIP) $(STRIPAR) $(BUILD)platformake$(EXE)
 
 
 $(BUILD)%$(OBJ) : src/%.cpp
 	@busybox mkdir -p $(dir $@) 1>$(nul) 2>&1
-	$(CPP) $(CPPAR) -c -o$@ $^
+	$(CXX) $(CXXAR) -c -o$@ $^

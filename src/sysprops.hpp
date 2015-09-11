@@ -24,4 +24,4 @@
 #pragma once
 
 
-const char * system_temporary_directory() noexcept;
+extern const char * const system_temporary_directory;
