@@ -34,7 +34,7 @@ using namespace TCLAP;
 
 
 static string constrained_make_arguments(const vector<string> & args) {
-	static const regex longarg_regex("--(make)?file=.*");
+	static const regex longarg_regex("--(make)?file=.*", regex_constants::optimize);
 
 	string retval;
 
@@ -59,13 +59,15 @@ static string constrained_make_arguments(const vector<string> & args) {
 
 
 settings_t load_settings(int argc, const char ** argv) {
+	static const regex path_fix("\\\\", regex_constants::optimize);
+
 	settings_t ret;
 
 	try {
 		CmdLine command_line("platformake -- a multiplatforming make proxy", ' ', __DATE__ " " __TIME__);
 		SwitchArg verbose("v", "verbose", "Turns on verbose output", command_line, ret.verbose);
 		SwitchArg delete_tempfile("", "no-delete-temporary", "Do not remove the temporary Makefile", command_line, ret.delete_tempfile);
-		ValueArg<string> make_file("f", "file", "read FILE as Makefile to transform", false, ret.make_file, "FILE", command_line);
+		ValueArg<string> make_file("f", "file", "read FILE as Makefile to transform, or read from stdin, if '-'", false, ret.make_file, "FILE", command_line);
 		ValueArg<string> temporary_directory("", "temporary-directory", "use DIR instead of a System-wide temporary directory for storing temporary Makefiles",
 		                                     false, ret.temporary_directory, "DIR", command_line);
 		ValueArg<string> make_command("m", "make-command", "Specifies the command used to invoke GNU make", false, ret.make_command, "path to make exec",
@@ -77,7 +79,7 @@ settings_t load_settings(int argc, const char ** argv) {
 		ret.verbose             = verbose.getValue();
 		ret.delete_tempfile     = delete_tempfile.getValue();
 		ret.make_command        = make_command.getValue();
-		ret.make_file           = make_file.getValue();
+		ret.make_file           = regex_replace(make_file.getValue(), path_fix, "");
 		ret.temporary_directory = temporary_directory.getValue();
 
 		ostringstream margs;

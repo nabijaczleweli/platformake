@@ -28,3 +28,4 @@
 
 
 std::string tempname(std::size_t length = 10);
+std::string path_nolastnode(const std::string & curpath);

@@ -27,6 +27,7 @@ SOURCES = $(foreach src,$(shell busybox find $(SOURCE) -name *.cpp),$(subst $(SO
 .PHONY : clean all clean-all deps exe
 
 all : exe
+	echo %EXEC
 
 clean :
 	rm -rf $(BUILD)
@@ -41,11 +42,11 @@ deps :
 	@mkdir $(INCLUDE)tclap
 	cp external/tclap/include/tclap/*.h $(INCLUDE)tclap
 
-exe : $(foreach src,$(SOURCES),$(BUILD)$(src)$(OBJ))
+exe : $(foreach src,$(SOURCES),$(OBJDIR)$(src)$(OBJ))
 	$(CXX) $(CXXAR) -o$(BUILD)platformake$(EXE) $^
 	$(STRIP) $(STRIPAR) $(BUILD)platformake$(EXE)
 
 
-$(BUILD)%$(OBJ) : src/%.cpp
+$(OBJDIR)%$(OBJ) : src/%.cpp
 	@busybox mkdir -p $(dir $@) 1>$(nul) 2>&1
 	$(CXX) $(CXXAR) -c -o$@ $^

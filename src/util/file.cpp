@@ -32,7 +32,7 @@ using namespace std::chrono;
 
 
 string tempname(size_t length) {
-	static const char filename_characters[]              = "aBcDeFgHiJkLmNoPqQsTuVwXyZ01234567890-_";
+	static const char filename_characters[]              = "aBcDeFgHiJkLmNoPqQsTuVwXyZ01234567890-_.";
 	static const constexpr auto filename_characters_size = sizeof filename_characters - 1;
 	static mt19937 engine(high_resolution_clock::now().time_since_epoch().count());  // random_device is deterministic on Windows
 	static uniform_int_distribution<size_t> distribution(0, filename_characters_size - 1);
@@ -43,4 +43,9 @@ string tempname(size_t length) {
 	while(retval[0] == '-' || retval[0] == '.')
 		retval[0] = generator();
 	return retval;
+}
+
+string path_nolastnode(const string & curpath) {
+	const auto last = curpath.find_last_of("/");
+	return (last == string::npos) ? "." : curpath.substr(0, last);
 }
