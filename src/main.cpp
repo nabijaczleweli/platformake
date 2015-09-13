@@ -40,6 +40,7 @@ void transform_makefile(istream & from, ostream & to, const string & relative_di
 void strip_line(string & line);
 
 
+//  Cannot use "--eval=" because older versions (<4) don't support it
 int main(int argc, const char ** argv) {
 	settings_t settings = load_settings(argc, argv);
 
@@ -68,22 +69,27 @@ int main(int argc, const char ** argv) {
 		transform_makefile(cin, outfile, ".", settings);
 	else {
 		ifstream infile(settings.make_file);
-		const string & makepath = path_nolastnode(settings.make_file);
-		transform_makefile(infile, outfile, makepath.empty() ? "." : makepath, settings);
+		if(!infile) {
+			cerr << argv[0] << ": ";
+			perror(settings.make_file.c_str());
+			return 2;  // GNU make's errorcode for no such file or directory
+		}
+
+		transform_makefile(infile, outfile, path_nolastnode(settings.make_file), settings);
 	}
 
 	if(settings.verbose)
 		clog << '\n';
 
 	outfile.flush();
-	int retval = system((settings.make_command + ' ' + settings.make_arguments + " -f \"" + tempfile_path + '"').c_str());
+	int retval = system((settings.make_command + " -f \"" + tempfile_path + "\" " + settings.make_arguments).c_str());
 
 	return retval;
 }
 
 
 void transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings) {
-	static const regex include_r("include[[:space:]](.+)", regex_constants::optimize);
+	static const regex include_r("include[[:space:]]?(.*)", regex_constants::optimize);
 
 	smatch match;
 	for(string line; getline(from, line);) {
@@ -91,11 +97,16 @@ void transform_makefile(istream & from, ostream & to, const string & relative_di
 
 		if(regex_match(line, match, include_r)) {
 			const auto & includepath = match.str(1);
-			if(settings.verbose)
-				clog << "v: including file \"" << includepath << "\"\n";
+			if(includepath.empty()) {
+				if(settings.verbose)
+					clog << "v: empty include directive, skipping\n";
+			} else {
+				if(settings.verbose)
+					clog << "v: including file \"" << includepath << "\"\n";
 
-			ifstream includefile(includepath);
-			transform_makefile(includefile, to, path_nolastnode(relative_directory + '/' + includepath), settings);
+				ifstream includefile(includepath);  // TODO: support multiple files
+				transform_makefile(includefile, to, path_nolastnode(relative_directory + '/' + includepath), settings);
+			}
 			continue;
 		}
 
@@ -109,7 +120,7 @@ void transform_makefile(istream & from, ostream & to, const string & relative_di
 void strip_line(string & line) {
 	static const vector<regex> regices = [&]() {
 		vector<regex> temp(3);
-		for(const auto reg : {"#.*", " +$", "^ +"}) // comment, start-of-line space, end-of-line space
+		for(const auto reg : {"#.*", " +$", "^ +"})  // comment, start-of-line space, end-of-line space
 			temp.emplace_back(reg, regex_constants::optimize);
 		return temp;
 	}();

@@ -22,7 +22,7 @@
 
 include configMakefile
 
-SOURCES = $(foreach src,$(shell busybox find $(SOURCE) -name *.cpp),$(subst $(SOURCE),,$(subst .cpp,,$(src))))
+SOURCES := $(foreach src,$(shell busybox find $(SOURCE) -name *.cpp),$(subst $(SOURCE),,$(subst .cpp,,$(src))))
 
 .PHONY : clean all clean-all deps exe
 

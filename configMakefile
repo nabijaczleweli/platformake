@@ -21,20 +21,20 @@
 #  DEALINGS IN THE SOFTWARE.
 
 ifeq "$(OS)" "Windows_NT"
-	EXE = .exe
-	nul = nul
+	EXE := .exe
+	nul := nul
 else
-	EXE = ""
-	nul = /dev/null
+	EXE := ""
+	nul := /dev/null
 endif
 
-OBJ = .o
+OBJ := .o
 
-SOURCE=src/
-BUILD=out/
-OBJDIR=$(BUILD)obj/
-INCLUDE=external/include/
+SOURCE := src/
+BUILD := out/
+OBJDIR := $(BUILD)obj/
+INCLUDE := external/include/
 
-STRIP=strip
-STRIPAR=--strip-all --remove-section=.comment --remove-section=.note
-CXXAR=-pedantic -O3 -fomit-frame-pointer -std=c++14 -Wall -Wextra -pipe -isystem$(INCLUDE)
+STRIP := strip
+STRIPAR := --strip-all --remove-section=.comment --remove-section=.note
+CXXAR := -pedantic -O3 -fomit-frame-pointer -std=c++14 -Wall -Wextra -pipe -isystem$(INCLUDE)

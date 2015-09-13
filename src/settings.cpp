@@ -33,31 +33,6 @@ using namespace std;
 using namespace TCLAP;
 
 
-static string constrained_make_arguments(const vector<string> & args) {
-	static const regex longarg_regex("--(make)?file=.*", regex_constants::optimize);
-
-	string retval;
-
-	for(auto itr = cbegin(args), enditr = cend(args); itr != enditr; ++itr) {
-		const string & val = *itr;
-
-		if(val.find("-f") == 0) {  // make -f
-			if(val.size() == 2)      //-f Makefile vs -fMakefile
-				++itr;
-
-			continue;
-		}
-
-		if(!regex_search(val, longarg_regex)) {
-			retval += val;
-			retval.push_back(' ');
-		}
-	}
-
-	return retval;
-}
-
-
 settings_t load_settings(int argc, const char ** argv) {
 	static const regex path_fix("\\\\", regex_constants::optimize);
 
@@ -79,11 +54,12 @@ settings_t load_settings(int argc, const char ** argv) {
 		ret.verbose             = verbose.getValue();
 		ret.delete_tempfile     = delete_tempfile.getValue();
 		ret.make_command        = make_command.getValue();
-		ret.make_file           = regex_replace(make_file.getValue(), path_fix, "");
+		ret.make_file           = regex_replace(make_file.getValue(), path_fix, "/");
 		ret.temporary_directory = temporary_directory.getValue();
 
-		ostringstream margs;
-		ret.make_arguments = constrained_make_arguments(make_arguments.getValue());
+		ostringstream margstrm;
+		move(begin(make_arguments), end(make_arguments), ostream_iterator<string>(margstrm, " "));
+		ret.make_arguments = margstrm.str();
 	} catch(const ArgException & e) {
 		cerr << argv[0] << ": error: parsing arguments failed (" << e.error() << ") for argument " << e.argId() << "\ntrying to continue anyway.";
 	}
