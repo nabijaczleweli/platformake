@@ -37,6 +37,7 @@ settings_t load_settings(int argc, const char ** argv) {
 	static const regex path_fix("\\\\", regex_constants::optimize);
 
 	settings_t ret;
+	ret.invocation_command = argv[0];
 
 	try {
 		CmdLine command_line("platformake -- a multiplatforming make proxy", ' ', __DATE__ " " __TIME__);

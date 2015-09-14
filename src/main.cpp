@@ -23,6 +23,7 @@
 
 #include "util/scope.hpp"
 #include "util/file.hpp"
+#include "util/line.hpp"
 #include "settings.hpp"
 #include "sysprops.hpp"
 #include <iostream>
@@ -36,8 +37,8 @@
 using namespace std;
 
 
-void transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings);
-void strip_line(string & line);
+int transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings);
+int error(const string & msg, int retc, const settings_t & settings);
 
 
 //  Cannot use "--eval=" because older versions (<4) don't support it
@@ -69,13 +70,11 @@ int main(int argc, const char ** argv) {
 		transform_makefile(cin, outfile, ".", settings);
 	else {
 		ifstream infile(settings.make_file);
-		if(!infile) {
-			cerr << argv[0] << ": ";
-			perror(settings.make_file.c_str());
-			return 2;  // GNU make's errorcode for no such file or directory
-		}
+		if(!infile)
+			return error(settings.make_file, 2, settings);
 
-		transform_makefile(infile, outfile, path_nolastnode(settings.make_file), settings);
+		if(int errc = transform_makefile(infile, outfile, path_nolastnode(settings.make_file), settings))
+			return errc;
 	}
 
 	if(settings.verbose)
@@ -88,24 +87,30 @@ int main(int argc, const char ** argv) {
 }
 
 
-void transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings) {
-	static const regex include_r("include[[:space:]]?(.*)", regex_constants::optimize);
+int transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings) {
+	static const regex include_r("include([[:space:]]*((?:[^[:space:]]+[[:space:]]?)*))?", regex_constants::optimize);
 
 	smatch match;
 	for(string line; getline(from, line);) {
 		strip_line(line);
 
 		if(regex_match(line, match, include_r)) {
-			const auto & includepath = match.str(1);
-			if(includepath.empty()) {
+			const auto & includepaths = match.str(2);
+			if(includepaths.empty()) {
 				if(settings.verbose)
 					clog << "v: empty include directive, skipping\n";
 			} else {
-				if(settings.verbose)
-					clog << "v: including file \"" << includepath << "\"\n";
+				istringstream files(includepaths);
+				string file;
+				while(getline(files, file, ' ')) {  // GNU make doesn't permit spaces in paths, see http://git.savannah.gnu.org/cgit/make.git/tree/read.c#n3102
+					if(settings.verbose)
+						clog << "v: including file \"" << file << "\"\n";
 
-				ifstream includefile(includepath);  // TODO: support multiple files
-				transform_makefile(includefile, to, path_nolastnode(relative_directory + '/' + includepath), settings);
+					ifstream includefile(file);
+					if(!includefile)
+						return error(file, 2, settings);
+					transform_makefile(includefile, to, path_nolastnode(relative_directory + '/' + file), settings);
+				}
 			}
 			continue;
 		}
@@ -115,16 +120,12 @@ void transform_makefile(istream & from, ostream & to, const string & relative_di
 			to << line << '\n';
 		}
 	}
+
+	return 0;
 }
 
-void strip_line(string & line) {
-	static const vector<regex> regices = [&]() {
-		vector<regex> temp(3);
-		for(const auto reg : {"#.*", " +$", "^ +"})  // comment, start-of-line space, end-of-line space
-			temp.emplace_back(reg, regex_constants::optimize);
-		return temp;
-	}();
-
-	for(const auto & rgx : regices)
-		line = regex_replace(line, rgx, "");
+int error(const string & msg, int retc, const settings_t & settings) {
+	cerr << settings.invocation_command << ": ";
+	perror(msg.c_str());
+	return retc;
 }

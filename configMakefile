@@ -24,7 +24,7 @@ ifeq "$(OS)" "Windows_NT"
 	EXE := .exe
 	nul := nul
 else
-	EXE := ""
+	EXE := .out
 	nul := /dev/null
 endif
 

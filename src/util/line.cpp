@@ -21,23 +21,22 @@
 //  DEALINGS IN THE SOFTWARE.
 
 
-#pragma once
-
-
-#include <string>
+#include "line.hpp"
 #include <vector>
-#include "sysprops.hpp"
+#include <regex>
 
 
-struct settings_t {
-	bool verbose                    = false;
-	bool delete_tempfile            = true;
-	std::string make_command        = "make";
-	std::string make_arguments      = "";
-	std::string make_file           = "Makefile";
-	std::string temporary_directory = system_temporary_directory;
-	std::string invocation_command  = "platformake";
-};
+using namespace std;
 
 
-settings_t load_settings(int argc, const char ** argv);
+void strip_line(string & line) {
+	static const vector<regex> regices = [&]() {
+		vector<regex> temp(3);
+		for(const auto reg : {"#.*", " +$", "^ +"})  // comment, start-of-line space, end-of-line space
+			temp.emplace_back(reg, regex_constants::optimize);
+		return temp;
+	}();
+
+	for(const auto & rgx : regices)
+		line = regex_replace(line, rgx, "");
+}
