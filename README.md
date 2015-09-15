@@ -6,6 +6,6 @@ A zero-effort pseudo-preprocessor for multiplatforming<sup>1</sup> Makefiles
 2. [simpleopt](https://github.com/brofield/simpleopt) for file globbing
 
 ## [License](LICENSE)
-A.k.a. do anything with it, but tell people I made it and don't hold me liable for anything.
+MIT - a.k.a. do anything with it, but tell people I made it and don't hold me liable for anything.
 
 <sub>multiplatforming<sup>1</sup> - the act of making something multiplatform</sub>
