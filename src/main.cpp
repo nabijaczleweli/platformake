@@ -21,24 +21,16 @@
 //  DEALINGS IN THE SOFTWARE.
 
 
+#include "util/error.hpp"
 #include "util/scope.hpp"
 #include "util/file.hpp"
-#include "util/line.hpp"
+#include "transform.hpp"
 #include "settings.hpp"
-#include "sysprops.hpp"
 #include <iostream>
 #include <fstream>
-#include <sstream>
-#include <cstdlib>
-#include <cstdio>
-#include <regex>
 
 
 using namespace std;
-
-
-int transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings);
-int error(const string & msg, int retc, const settings_t & settings);
 
 
 //  Cannot use "--eval=" because older versions (<4) don't support it
@@ -56,7 +48,7 @@ int main(int argc, const char ** argv) {
 	quickscope_wrapper tempfile_delete{[&]() {
 		if(settings.delete_tempfile)
 			if(remove(tempfile_path.c_str()))
-				cerr << "\nDeleting temporary file \"" << tempfile_path << "\" failed.\n";
+				error("Deleting temporary file \"" + tempfile_path + "\" failed", 0, settings);
 	}};
 
 
@@ -66,16 +58,9 @@ int main(int argc, const char ** argv) {
 
 	ofstream outfile(tempfile_path);
 
-	if(settings.make_file == "-")
-		transform_makefile(cin, outfile, ".", settings);
-	else {
-		ifstream infile(settings.make_file);
-		if(!infile)
-			return error(settings.make_file, 2, settings);
-
-		if(int errc = transform_makefile(infile, outfile, path_nolastnode(settings.make_file), settings))
-			return errc;
-	}
+	if(int errc =
+	       ((settings.make_file == "-" || settings.make_file == "--") ? transform_makefile(cin, outfile, ".", settings) : transform_makefile(outfile, settings)))
+		return errc;
 
 	if(settings.verbose)
 		clog << '\n';
@@ -84,48 +69,4 @@ int main(int argc, const char ** argv) {
 	int retval = system((settings.make_command + " -f \"" + tempfile_path + "\" " + settings.make_arguments).c_str());
 
 	return retval;
-}
-
-
-int transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings) {
-	static const regex include_r("include([[:space:]]*((?:[^[:space:]]+[[:space:]]?)*))?", regex_constants::optimize);
-
-	smatch match;
-	for(string line; getline(from, line);) {
-		strip_line(line);
-
-		if(regex_match(line, match, include_r)) {
-			const auto & includepaths = match.str(2);
-			if(includepaths.empty()) {
-				if(settings.verbose)
-					clog << "v: empty include directive, skipping\n";
-			} else {
-				istringstream files(includepaths);
-				string file;
-				while(getline(files, file, ' ')) {  // GNU make doesn't permit spaces in paths, see http://git.savannah.gnu.org/cgit/make.git/tree/read.c#n3102
-					if(settings.verbose)
-						clog << "v: including file \"" << file << "\"\n";
-
-					ifstream includefile(file);
-					if(!includefile)
-						return error(file, 2, settings);
-					transform_makefile(includefile, to, path_nolastnode(relative_directory + '/' + file), settings);
-				}
-			}
-			continue;
-		}
-
-		if(!line.empty()) {
-			line = regex_replace(line, regex("%EXEC"s), ".exe");
-			to << line << '\n';
-		}
-	}
-
-	return 0;
-}
-
-int error(const string & msg, int retc, const settings_t & settings) {
-	cerr << settings.invocation_command << ": ";
-	perror(msg.c_str());
-	return retc;
 }

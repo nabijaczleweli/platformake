@@ -24,20 +24,11 @@
 #pragma once
 
 
-#include "sysprops.hpp"
+#include "settings.hpp"
+#include <iosfwd>
 #include <string>
-#include <vector>
 
 
-struct settings_t {
-	bool verbose                    = false;
-	bool delete_tempfile            = true;
-	std::string make_command        = "make";
-	std::string make_arguments      = "";
-	std::string make_file           = "Makefile";
-	std::string temporary_directory = system_temporary_directory;
-	std::string invocation_command  = "platformake";
-};
-
-
-settings_t load_settings(int argc, const char ** argv);
+int transform_makefile(std::ostream & to, const settings_t & settings);
+int transform_makefile(const std::string & path, std::ostream & to, const settings_t & settings);
+int transform_makefile(std::istream & from, std::ostream & to, const std::string & relative_directory, const settings_t & settings);

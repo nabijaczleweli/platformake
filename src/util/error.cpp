@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 
-// Copyright (c) 2015 nabijaczleweli
+// Copyright (c) 2015 naibjaczleweli
 
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -21,23 +21,16 @@
 //  DEALINGS IN THE SOFTWARE.
 
 
-#pragma once
+#include "error.hpp"
+#include <iostream>
+#include <cstdio>
 
 
-#include "sysprops.hpp"
-#include <string>
-#include <vector>
+using namespace std;
 
 
-struct settings_t {
-	bool verbose                    = false;
-	bool delete_tempfile            = true;
-	std::string make_command        = "make";
-	std::string make_arguments      = "";
-	std::string make_file           = "Makefile";
-	std::string temporary_directory = system_temporary_directory;
-	std::string invocation_command  = "platformake";
-};
-
-
-settings_t load_settings(int argc, const char ** argv);
+int error(const string & msg, int retc, const settings_t & settings) {
+	cerr << settings.invocation_command << ": ";
+	perror(msg.c_str());
+	return retc;
+}

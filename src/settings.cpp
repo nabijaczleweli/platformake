@@ -40,10 +40,11 @@ settings_t load_settings(int argc, const char ** argv) {
 	ret.invocation_command = argv[0];
 
 	try {
-		CmdLine command_line("platformake -- a multiplatforming make proxy", ' ', __DATE__ " " __TIME__);
+		CmdLine command_line("platformake -- a multiplatforming make preprocessor", ' ', __DATE__ " " __TIME__);
 		SwitchArg verbose("v", "verbose", "Turns on verbose output", command_line, ret.verbose);
 		SwitchArg delete_tempfile("", "no-delete-temporary", "Do not remove the temporary Makefile", command_line, ret.delete_tempfile);
-		ValueArg<string> make_file("f", "file", "read FILE as Makefile to transform, or read from stdin, if '-'", false, ret.make_file, "FILE", command_line);
+		ValueArg<string> make_file("f", "file", "read FILE as Makefile to transform, or read from stdin, if '-' or '--'", false, ret.make_file, "FILE",
+		                           command_line);
 		ValueArg<string> temporary_directory("", "temporary-directory", "use DIR instead of a System-wide temporary directory for storing temporary Makefiles",
 		                                     false, ret.temporary_directory, "DIR", command_line);
 		ValueArg<string> make_command("m", "make-command", "Specifies the command used to invoke GNU make", false, ret.make_command, "path to make exec",
@@ -62,7 +63,8 @@ settings_t load_settings(int argc, const char ** argv) {
 		move(begin(make_arguments), end(make_arguments), ostream_iterator<string>(margstrm, " "));
 		ret.make_arguments = margstrm.str();
 	} catch(const ArgException & e) {
-		cerr << argv[0] << ": error: parsing arguments failed (" << e.error() << ") for argument " << e.argId() << "\ntrying to continue anyway.";
+		cerr << ret.invocation_command << ": error: parsing arguments failed (" << e.error() << ") for argument " << e.argId()
+		     << "\ntrying to continue anyway.\n\n";
 	}
 
 	return ret;
