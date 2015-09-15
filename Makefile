@@ -41,6 +41,7 @@ deps :
 	@mkdir $(INCLUDE) 1>$(nul) 2>&1 || :
 	@mkdir $(INCLUDE)tclap
 	cp external/tclap/include/tclap/*.h $(INCLUDE)tclap
+	cp external/simpleopt/SimpleGlob.h $(INCLUDE)
 
 exe : $(foreach src,$(SOURCES),$(OBJDIR)$(src)$(OBJ))
 	$(CXX) $(CXXAR) -o$(BUILD)platformake$(EXE) $^

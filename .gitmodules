@@ -1,3 +1,6 @@
 [submodule "external/tclap"]
 	path = external/tclap
 	url = https://github.com/Qointum/tclap
+[submodule "external/simpleopt"]
+	path = external/simpleopt
+	url = https://github.com/nabijaczleweli/simpleopt.git
