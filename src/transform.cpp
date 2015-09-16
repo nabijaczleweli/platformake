@@ -24,6 +24,7 @@
 #include "transform.hpp"
 #include "util/error.hpp"
 #include "util/file.hpp"
+#include "util/glob.hpp"
 #include "util/line.hpp"
 #include <iostream>
 #include <fstream>
@@ -31,6 +32,9 @@
 
 
 using namespace std;
+
+
+static int include_file(const vector<string> & files, ostream & to, const string & rootdir, const settings_t & settings);
 
 
 int transform_makefile(ostream & to, const settings_t & settings) {
@@ -57,19 +61,9 @@ int transform_makefile(istream & from, ostream & to, const string & relative_dir
 			if(includepaths.empty()) {
 				if(settings.verbose)
 					clog << "v: empty include directive, skipping\n";
-			} else {
-				istringstream files(includepaths);
-				string file;
-				while(getline(files, file, ' ')) {  // GNU make doesn't permit spaces in paths, see http://git.savannah.gnu.org/cgit/make.git/tree/read.c#n3102
-					if(settings.verbose)
-						clog << "v: including file \"" << file << "\"\n";
-
-					ifstream includefile(file);
-					if(!includefile)
-						return error(file, 2, settings);
-					transform_makefile(includefile, to, path_nolastnode(relative_directory + '/' + file), settings);
-				}
-			}
+			} else
+				// GNU make doesn't permit spaces in paths, see http://git.savannah.gnu.org/cgit/make.git/tree/read.c#n3102
+				include_file(glob(tokenize(includepaths)), to, relative_directory, settings);
 			continue;
 		}
 
@@ -77,6 +71,21 @@ int transform_makefile(istream & from, ostream & to, const string & relative_dir
 			line = regex_replace(line, regex("%EXEC"s), ".exe");
 			to << line << '\n';
 		}
+	}
+
+	return 0;
+}
+
+static int include_file(const vector<string> & files, ostream & to, const string & rootdir, const settings_t & settings) {
+	for(const auto & file : files) {
+		if(settings.verbose)
+			clog << "v: including file \"" << file << "\"\n";
+
+		ifstream includefile(rootdir + '/' + file);
+		if(!includefile)
+			return error(file, 2, settings);
+		if(int ret = transform_makefile(includefile, to, path_nolastnode(rootdir + '/' + file), settings))
+			return ret;
 	}
 
 	return 0;

@@ -21,43 +21,11 @@
 //  DEALINGS IN THE SOFTWARE.
 
 
-#include "line.hpp"
+#include <string>
 #include <vector>
-#include <regex>
 
 
-using namespace std;
+enum class glob_include_mode : unsigned char { all, only_files, only_directories };
 
 
-void strip_line(string & line) {
-	static const vector<regex> regices = [&]() {
-		vector<regex> temp(3);
-		for(const auto reg : {"#.*", " +$", "^ +"})  // comment, start-of-line space, end-of-line space
-			temp.emplace_back(reg, regex_constants::optimize);
-		return temp;
-	}();
-
-	for(const auto & rgx : regices)
-		line = regex_replace(line, rgx, "");
-}
-
-//blatantly ripped off http://stackoverflow.com/a/53878/2851815
-vector<string> & tokenize(const string & what, vector<string> & where, char sep) {
-	const char * str = what.c_str();
-	do {
-		const char * begin = str;
-
-		while(*str != sep && *str)
-			str++;
-
-		where.emplace_back(begin, str);
-	} while(*str++);
-
-	return where;
-}
-
-vector<string> tokenize(const string & what, char sep) {
-	vector<string> tokens;
-	tokenize(what, tokens, sep);
-	return tokens;
-}
+std::vector<std::string> glob(const std::vector<std::string> & from, glob_include_mode mode = glob_include_mode::all);

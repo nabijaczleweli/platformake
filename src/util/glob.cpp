@@ -21,43 +21,29 @@
 //  DEALINGS IN THE SOFTWARE.
 
 
-#include "line.hpp"
-#include <vector>
-#include <regex>
+#include "glob.hpp"
+#include <SimpleGlob.h>
 
 
 using namespace std;
 
 
-void strip_line(string & line) {
-	static const vector<regex> regices = [&]() {
-		vector<regex> temp(3);
-		for(const auto reg : {"#.*", " +$", "^ +"})  // comment, start-of-line space, end-of-line space
-			temp.emplace_back(reg, regex_constants::optimize);
-		return temp;
-	}();
+vector<string> glob(const vector<string> & from, glob_include_mode mode) {
+	unsigned int flags = SG_GLOB_TILDE;
+	switch(mode) {
+		case glob_include_mode::only_files:
+			flags |= SG_GLOB_ONLYFILE;
+			break;
+		case glob_include_mode::only_directories:
+			flags |= SG_GLOB_ONLYDIR;
+			break;
+		default:
+			break;
+	}
+	CSimpleGlob globber(flags);
 
-	for(const auto & rgx : regices)
-		line = regex_replace(line, rgx, "");
-}
+	for(const auto & pattern : from)
+		globber.Add(pattern.c_str());
 
-//blatantly ripped off http://stackoverflow.com/a/53878/2851815
-vector<string> & tokenize(const string & what, vector<string> & where, char sep) {
-	const char * str = what.c_str();
-	do {
-		const char * begin = str;
-
-		while(*str != sep && *str)
-			str++;
-
-		where.emplace_back(begin, str);
-	} while(*str++);
-
-	return where;
-}
-
-vector<string> tokenize(const string & what, char sep) {
-	vector<string> tokens;
-	tokenize(what, tokens, sep);
-	return tokens;
+	return {globber.Files(), globber.Files() + globber.FileCount()};
 }
