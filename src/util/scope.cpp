@@ -25,5 +25,6 @@
 
 
 quickscope_wrapper::~quickscope_wrapper() {
-	destructor();
+	if(destructor)
+		destructor();
 }
