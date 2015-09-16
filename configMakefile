@@ -23,9 +23,11 @@
 ifeq "$(OS)" "Windows_NT"
 	EXE := .exe
 	nul := nul
+	FIND := busybox find
 else
 	EXE := .out
 	nul := /dev/null
+	FIND := find
 endif
 
 OBJ := .o

@@ -22,7 +22,7 @@
 
 include configMakefile
 
-SOURCES := $(foreach src,$(shell busybox find $(SOURCE) -name *.cpp),$(subst $(SOURCE),,$(subst .cpp,,$(src))))
+SOURCES := $(foreach src,$(shell $(FIND) $(SOURCE) -name *.cpp),$(subst $(SOURCE),,$(subst .cpp,,$(src))))
 
 .PHONY : clean all clean-all deps exe
 
@@ -49,5 +49,5 @@ exe : $(foreach src,$(SOURCES),$(OBJDIR)$(src)$(OBJ))
 
 
 $(OBJDIR)%$(OBJ) : src/%.cpp
-	@busybox mkdir -p $(dir $@) 1>$(nul) 2>&1
+	@mkdir -p $(dir $@) 1>$(nul) 2>&1
 	$(CXX) $(CXXAR) -c -o$@ $^
