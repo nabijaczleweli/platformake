@@ -10,7 +10,7 @@ chmod +x dropbox_uploader.sh
 
 
 $uploader mkdir "$subfolder_name"
-$uploader upload out/platformake "$subfolder_name/$outfilename"
+$uploader upload out/platformake.out "$subfolder_name/$outfilename"
 for file in README.md LICENSE
 do
 	$uploader -s upload "$file" "$subfolder_name/"
