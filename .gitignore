@@ -35,3 +35,5 @@ external/include/
 
 *.sublime-toks
 *.sublime-workspace
+
+dropbox_uploader.sh
