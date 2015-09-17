@@ -22,7 +22,7 @@ script:
   - make all
 
 after_success:
-  - if [ -n "$TRAVIS_PULL_REQUEST" ]; then ./deploy.sh --default --report --newest --tarball; fi
+  - if [ -n "$TRAVIS_PULL_REQUEST" ]; then ./deploy.sh; fi
 
 addons:
   apt:
