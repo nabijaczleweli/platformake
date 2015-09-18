@@ -34,7 +34,7 @@
 using namespace std;
 
 
-static inline regex operator"" _r(const char * str, unsigned int) {
+static inline regex operator"" _r(const char * str, size_t) {
 	return regex(str, regex_constants::optimize);
 }
 
