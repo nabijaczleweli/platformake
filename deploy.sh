@@ -9,9 +9,12 @@ curl -Os "https://raw.githubusercontent.com/andreafabrizi/Dropbox-Uploader/maste
 chmod +x dropbox_uploader.sh
 
 
-$uploader mkdir "$subfolder_name"
-$uploader upload out/platformake.out "$subfolder_name/$outfilename"
-for file in README.md LICENSE
+for subfolder in "$subfolder_name" "0-newest"
 do
-	$uploader -s upload "$file" "$subfolder_name/"
+	$uploader mkdir "$subfolder"
+	$uploader upload out/platformake.out "$subfolder/$outfilename"
+	for file in README.md LICENSE
+	do
+		$uploader -s upload "$file" "$subfolder/"
+	done
 done
