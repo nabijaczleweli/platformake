@@ -13,7 +13,7 @@ chmod +x dropbox_uploader.sh
 for subfolder in "$subfolder_name" "0-newest"
 do
 	$uploader mkdir "$subfolder"
-	if [ "$subfolder" == "0-newest" ]
+	if [ "$subfolder" = "0-newest" ]
 	then
 		outfilename="$newestoutfilename"
 	else
