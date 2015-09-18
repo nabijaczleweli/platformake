@@ -50,6 +50,6 @@ exe : $(foreach src,$(SOURCES),$(OBJDIR)$(src)$(OBJ))
 
 $(OBJDIR)%$(OBJ) : $(SOURCE)%.cpp
 	@mkdir -p $(dir $@) 1>$(nul) 2>&1
-	$(CXX) $(CXXAR) -c -o$@ $^
+	$(CXX) $(CXXAR) -c -o$@ $<
 
 $(foreach src,$(subst main,,$(SOURCES)),$(eval $(OBJDIR)$(src)$(OBJ) : $(SOURCE)$(src).hpp))
