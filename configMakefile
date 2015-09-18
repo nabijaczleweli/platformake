@@ -40,3 +40,5 @@ INCLUDE := external/include/
 STRIP := strip
 STRIPAR := --strip-all --remove-section=.comment --remove-section=.note
 CXXAR := -pedantic -O3 -fomit-frame-pointer -std=c++14 -Wall -Wextra -pipe -isystem$(INCLUDE)
+
+NESTEDEXE := %EXEC

@@ -22,19 +22,15 @@
 
 
 #include "transform.hpp"
+#include "directives.hpp"
 #include "util/error.hpp"
 #include "util/file.hpp"
-#include "util/glob.hpp"
 #include "util/line.hpp"
-#include <iostream>
 #include <fstream>
 #include <regex>
 
 
 using namespace std;
-
-
-static int include_file(const vector<string> & files, ostream & to, const string & rootdir, const settings_t & settings);
 
 
 int transform_makefile(ostream & to, const settings_t & settings) {
@@ -50,42 +46,24 @@ int transform_makefile(const string & path, ostream & to, const settings_t & set
 }
 
 int transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings) {
-	static const regex include_r("include([[:space:]]*((?:[^[:space:]]+[[:space:]]?)*))?", regex_constants::optimize);
-
 	smatch match;
 	for(string line; getline(from, line);) {
 		strip_line(line);
 
-		if(regex_match(line, match, include_r)) {
-			const auto & includepaths = match.str(2);
-			if(includepaths.empty()) {
-				if(settings.verbose)
-					clog << "v: empty include directive, skipping\n";
-			} else
-				// GNU make doesn't permit spaces in paths, see http://git.savannah.gnu.org/cgit/make.git/tree/read.c#n3102
-				include_file(glob(tokenize(includepaths)), to, relative_directory, settings);
-			continue;
+		for(const auto & directive : directives) {
+			if(regex_match(line, match, get<0>(directive))) {
+				if(int ret = get<1>(directive)(match, to, relative_directory, settings))
+					return ret;
+				if(!get<2>(directive))
+					line.clear();
+				break;
+			}
 		}
 
 		if(!line.empty()) {
 			line = regex_replace(line, regex("%EXEC"s), ".exe");
 			to << line << '\n';
 		}
-	}
-
-	return 0;
-}
-
-static int include_file(const vector<string> & files, ostream & to, const string & rootdir, const settings_t & settings) {
-	for(const auto & file : files) {
-		if(settings.verbose)
-			clog << "v: including file \"" << file << "\"\n";
-
-		ifstream includefile(rootdir + '/' + file);
-		if(!includefile)
-			return error(file, 2, settings);
-		if(int ret = transform_makefile(includefile, to, path_nolastnode(rootdir + '/' + file), settings))
-			return ret;
 	}
 
 	return 0;

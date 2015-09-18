@@ -23,7 +23,10 @@
 
 #include "sysprops.hpp"
 #include <initializer_list>
+#include <algorithm>
+#include <iostream>
 #include <cstdlib>
+#include <cctype>
 
 
 using namespace std;
@@ -39,3 +42,25 @@ static const char * envvar_or(initializer_list<const char *> from, const char * 
 
 
 const char * const system_temporary_directory = envvar_or({"TEMP", "TMP"}, "/tmp");  // TEMP always set on Windows systems, might not be on Linuxish
+const char * const system_name                = envvar_or({"OS", "OSTYPE"}, "linux");
+
+
+system_variant_t system_variant() {
+	static const system_variant_t variant = []() {
+		string osname = system_name;
+		transform(begin(osname), end(osname), begin(osname), [](char c) { return tolower(c); });
+
+		if(osname.find("windows") != string::npos)
+			return system_variant_t::windows;
+		else if(osname.find("darwin") != string::npos)
+			return system_variant_t::osx;
+		else if(osname.find("linux") != string::npos)
+			return system_variant_t::linux;
+		else {
+			cerr << "w: unable to determine host OS type, set to \"" << system_name << "\" using \"linux\" defaults\n";
+			return system_variant_t::linux;
+		}
+	}();
+
+	return variant;
+}

@@ -27,7 +27,7 @@ SOURCES := $(foreach src,$(shell $(FIND) $(SOURCE) -name *.cpp),$(subst $(SOURCE
 .PHONY : clean all clean-all deps exe
 
 all : exe
-	echo %EXEC
+	echo %EXEC $(NESTEDEXE)
 
 clean :
 	rm -rf $(BUILD)
@@ -48,6 +48,8 @@ exe : $(foreach src,$(SOURCES),$(OBJDIR)$(src)$(OBJ))
 	$(STRIP) $(STRIPAR) $(BUILD)platformake$(EXE)
 
 
-$(OBJDIR)%$(OBJ) : src/%.cpp
+$(OBJDIR)%$(OBJ) : $(SOURCE)%.cpp
 	@mkdir -p $(dir $@) 1>$(nul) 2>&1
 	$(CXX) $(CXXAR) -c -o$@ $^
+
+$(foreach src,$(subst main,,$(SOURCES)),$(eval $(OBJDIR)$(src)$(OBJ) : $(SOURCE)$(src).hpp))

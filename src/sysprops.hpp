@@ -24,4 +24,11 @@
 #pragma once
 
 
+enum class system_variant_t : unsigned char { windows, linux, osx };
+
+
 extern const char * const system_temporary_directory;
+extern const char * const system_name;
+
+
+system_variant_t system_variant();
