@@ -46,20 +46,9 @@ int transform_makefile(const string & path, ostream & to, const settings_t & set
 }
 
 int transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings) {
-	smatch match;
 	for(string line; getline(from, line);) {
 		strip_line(line);
-
-		for(const auto & directive : directives) {
-			if(regex_match(line, match, get<0>(directive))) {
-				if(int ret = get<1>(directive)(match, to, relative_directory, settings))
-					return ret;
-				if(!get<2>(directive))
-					line.clear();
-				break;
-			}
-		}
-
+		process_directives(line, to, relative_directory, settings);
 		if(!line.empty()) {
 			line = regex_replace(line, regex("%EXEC"s), ".exe");
 			to << line << '\n';
