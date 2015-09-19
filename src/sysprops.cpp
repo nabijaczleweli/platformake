@@ -53,7 +53,7 @@ system_variant_t system_variant() {
 		if(osname.find("windows") != string::npos)
 			return system_variant_t::windows;
 		else if(osname.find("darwin") != string::npos)
-			return system_variant_t::osx;
+			return system_variant_t::macosx;
 		else if(osname.find("linux") != string::npos)
 			return system_variant_t::linux;
 		else {

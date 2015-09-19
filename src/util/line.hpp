@@ -29,5 +29,6 @@
 
 
 void strip_line(std::string & line);
+
 std::vector<std::string> & tokenize(const std::string & what, std::vector<std::string> & where, char sep = ' ');
 std::vector<std::string> tokenize(const std::string & what, char sep = ' ');

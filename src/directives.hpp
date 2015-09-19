@@ -36,3 +36,5 @@
 extern std::vector<
     std::tuple<const std::regex, std::function<int(const std::smatch &, std::ostream & to, const std::string & root_directory, const settings_t &)>,
                bool /*leave_original*/>> directives;
+
+int process_directives(std::string & line, std::ostream & to, const std::string & relative_directory, const settings_t & settings);
