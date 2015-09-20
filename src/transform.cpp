@@ -26,11 +26,16 @@
 #include "util/error.hpp"
 #include "util/file.hpp"
 #include "util/line.hpp"
+#include "macros.hpp"
 #include <fstream>
+#include <iostream>
 #include <regex>
 
 
 using namespace std;
+
+
+char macro_substitution_character = '%';
 
 
 int transform_makefile(ostream & to, const settings_t & settings) {
@@ -48,11 +53,33 @@ int transform_makefile(const string & path, ostream & to, const settings_t & set
 int transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings) {
 	for(string line; getline(from, line);) {
 		strip_line(line);
-		process_directives(line, to, relative_directory, settings);
-		if(!line.empty()) {
-			line = regex_replace(line, regex("%EXEC"s), ".exe");
-			to << line << '\n';
+
+		string::size_type pos{};
+		while((pos = line.find(macro_substitution_character, pos)) != string::npos) {
+			auto after = line.find_first_not_of("ABCDEFGHIJKLMOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz0123456789", pos + 1);
+
+			if(after == pos + 1) {
+				++pos;
+				continue;
+			}
+
+			cout << line << '\n';
+			if(after == string::npos)  // Last thing on a line
+				after = line.size() - 1;
+
+			const auto macrokey = line.substr(pos + 1, after - pos);
+			const auto macro = macros().find(macrokey);
+			if(macro == macros().end()) {
+				cerr << settings.invocation_command << ": macro not found: \"" << macrokey << "\"\n";
+				++pos;  // Ignore this particular macro
+			} else
+				line.replace(pos, after - pos, macro->second);
 		}
+
+		process_directives(line, to, relative_directory, settings);
+
+		if(!line.empty())
+			to << line << '\n';
 	}
 
 	return 0;

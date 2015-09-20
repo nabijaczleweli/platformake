@@ -21,17 +21,40 @@
 //  DEALINGS IN THE SOFTWARE.
 
 
-#pragma once
+#include "macros.hpp"
+#include "sysprops.hpp"
+#include <functional>
+#include <algorithm>
+#include <vector>
 
 
-#include "settings.hpp"
-#include <iosfwd>
-#include <string>
+using namespace std;
+
+using macros_t          = map<string, string>;
+using system_variants_t = vector<system_variant_t>;
 
 
-extern char macro_substitution_character;
+static const vector<pair<const system_variants_t, const macros_t>> defaults({
+    {{system_variant_t::linux}, {{"system", "linux"}}},      //
+    {{system_variant_t::windows}, {{"system", "windows"}}},  //
+    {{system_variant_t::macosx}, {{"system", "macosx"}}},    //
+    {{}, {{"system", "system"}}},                            //
+
+    {{system_variant_t::windows}, {{"EXEC", ".exe"}}},  //
+    {{}, {{"EXEC", ".out"}}}                            //
+});
 
 
-int transform_makefile(std::ostream & to, const settings_t & settings);
-int transform_makefile(const std::string & path, std::ostream & to, const settings_t & settings);
-int transform_makefile(std::istream & from, std::ostream & to, const std::string & relative_directory, const settings_t & settings);
+macros_t & macros() {
+	static macros_t mcrs = []() {
+		macros_t toret;
+
+		for(const auto & definitions : defaults)
+			if(definitions.first.empty() || any_of(begin(definitions.first), end(definitions.first), [](auto sys) { return sys == system_variant(); }))
+				toret.insert(begin(definitions.second), end(definitions.second));
+
+		return toret;
+	}();
+
+	return mcrs;
+}

@@ -24,14 +24,8 @@
 #pragma once
 
 
-#include "settings.hpp"
-#include <iosfwd>
+#include <map>
 #include <string>
 
 
-extern char macro_substitution_character;
-
-
-int transform_makefile(std::ostream & to, const settings_t & settings);
-int transform_makefile(const std::string & path, std::ostream & to, const settings_t & settings);
-int transform_makefile(std::istream & from, std::ostream & to, const std::string & relative_directory, const settings_t & settings);
+std::map<std::string, std::string> & macros();
