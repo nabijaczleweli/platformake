@@ -36,17 +36,6 @@
 using namespace std;
 
 
-static const regex & macro_regex(char macrochar) {
-	static map<char, regex> regices;
-
-	auto itr = regices.find(macrochar);
-	if(itr == regices.end()) {
-		itr = regices.emplace(macrochar, regex("("s + macrochar + "([A-Za-z0-9]+))", regex_constants::optimize)).first;
-	}
-	return itr->second;
-}
-
-
 int transform_makefile(ostream & to, const settings_t & settings) {
 	return transform_makefile(settings.make_file, to, settings);
 }
@@ -60,29 +49,9 @@ int transform_makefile(const string & path, ostream & to, const settings_t & set
 }
 
 int transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings) {
-	smatch match;
 	for(string line; getline(from, line);) {
 		strip_line(line);
-
-		while(regex_search(line, match, macro_regex(settings.macro_substitution_character))) {
-			const auto & wholemacro_sub = match[1];
-			const auto & macro_text     = match.str(2);
-			const auto macro            = macros().find(macro_text);
-
-			if(settings.verbose)
-				clog << "Found macro " << macro_text << " with";
-
-			if(macro == macros().end()) {
-				if(settings.verbose)
-					clog << "out a value\n";
-				cerr << settings.invocation_command << ": macro not found: \"" << macro_text << "\"\n";
-				return 3;
-			} else {
-				if(settings.verbose)
-					clog << " a value of " << macro->second << '\n';
-				line.replace(wholemacro_sub.first, wholemacro_sub.second, macro->second);
-			}
-		}
+		process_macros(line, settings);
 		process_directives(line, to, relative_directory, settings);
 
 		if(!line.empty())

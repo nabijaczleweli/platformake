@@ -25,7 +25,10 @@
 #include "sysprops.hpp"
 #include <functional>
 #include <algorithm>
+#include <iostream>
 #include <vector>
+#include <regex>
+#include <map>
 
 
 using namespace std;
@@ -45,6 +48,16 @@ static const vector<pair<const system_variants_t, const macros_t>> defaults({
 });
 
 
+static const regex & macro_regex(char macrochar) {
+	static map<char, regex> regices;
+
+	auto itr = regices.find(macrochar);
+	if(itr == regices.end())
+		itr = regices.emplace(macrochar, regex("("s + macrochar + "([A-Za-z0-9]+))", regex_constants::optimize)).first;
+	return itr->second;
+}
+
+
 macros_t & macros() {
 	static macros_t mcrs = []() {
 		macros_t toret;
@@ -57,4 +70,29 @@ macros_t & macros() {
 	}();
 
 	return mcrs;
+}
+
+int process_macros(string & line, const settings_t & settings) {
+	smatch match;
+	while(regex_search(line, match, macro_regex(settings.macro_substitution_character))) {
+		const auto & wholemacro_sub = match[1];
+		const auto & macro_text     = match.str(2);
+		const auto macro            = macros().find(macro_text);
+
+		if(settings.verbose)
+			clog << "Found macro " << macro_text << " with";
+
+		if(macro == macros().end()) {
+			if(settings.verbose)
+				clog << "out a value\n";
+			cerr << settings.invocation_command << ": macro not found: \"" << macro_text << "\"\n";
+			return 3;
+		} else {
+			if(settings.verbose)
+				clog << " a value of " << macro->second << '\n';
+			line.replace(wholemacro_sub.first, wholemacro_sub.second, macro->second);
+		}
+	}
+
+	return 0;
 }

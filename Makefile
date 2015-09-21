@@ -27,7 +27,7 @@ SOURCES := $(foreach src,$(shell $(FIND) $(SOURCE) -name *.cpp),$(subst $(SOURCE
 .PHONY : clean all clean-all deps exe
 
 all : exe
-	echo %EXEC $(NESTEDEXE)
+	echo %EXEC $(NESTEDEXE) asdf%{EXEC}asdf
 
 clean :
 	rm -rf $(BUILD)

@@ -24,8 +24,12 @@
 #pragma once
 
 
-#include <map>
+#include "settings.hpp"
 #include <string>
+#include <map>
 
 
 std::map<std::string, std::string> & macros();
+
+
+int process_macros(std::string & line, const settings_t & settings);
