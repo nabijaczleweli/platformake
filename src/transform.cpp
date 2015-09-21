@@ -27,15 +27,24 @@
 #include "util/file.hpp"
 #include "util/line.hpp"
 #include "macros.hpp"
-#include <fstream>
 #include <iostream>
+#include <fstream>
 #include <regex>
+#include <map>
 
 
 using namespace std;
 
 
-char macro_substitution_character = '%';
+static const regex & macro_regex(char macrochar) {
+	static map<char, regex> regices;
+
+	auto itr = regices.find(macrochar);
+	if(itr == regices.end()) {
+		itr = regices.emplace(macrochar, regex("("s + macrochar + "([A-Za-z0-9]+))", regex_constants::optimize)).first;
+	}
+	return itr->second;
+}
 
 
 int transform_makefile(ostream & to, const settings_t & settings) {
@@ -51,31 +60,29 @@ int transform_makefile(const string & path, ostream & to, const settings_t & set
 }
 
 int transform_makefile(istream & from, ostream & to, const string & relative_directory, const settings_t & settings) {
+	smatch match;
 	for(string line; getline(from, line);) {
 		strip_line(line);
 
-		string::size_type pos{};
-		while((pos = line.find(macro_substitution_character, pos)) != string::npos) {
-			auto after = line.find_first_not_of("ABCDEFGHIJKLMOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz0123456789", pos + 1);
+		while(regex_search(line, match, macro_regex(settings.macro_substitution_character))) {
+			const auto & wholemacro_sub = match[1];
+			const auto & macro_text     = match.str(2);
+			const auto macro            = macros().find(macro_text);
 
-			if(after == pos + 1) {
-				++pos;
-				continue;
-			}
+			if(settings.verbose)
+				clog << "Found macro " << macro_text << " with";
 
-			cout << line << '\n';
-			if(after == string::npos)  // Last thing on a line
-				after = line.size() - 1;
-
-			const auto macrokey = line.substr(pos + 1, after - pos);
-			const auto macro = macros().find(macrokey);
 			if(macro == macros().end()) {
-				cerr << settings.invocation_command << ": macro not found: \"" << macrokey << "\"\n";
-				++pos;  // Ignore this particular macro
-			} else
-				line.replace(pos, after - pos, macro->second);
+				if(settings.verbose)
+					clog << "out a value\n";
+				cerr << settings.invocation_command << ": macro not found: \"" << macro_text << "\"\n";
+				return 3;
+			} else {
+				if(settings.verbose)
+					clog << " a value of " << macro->second << '\n';
+				line.replace(wholemacro_sub.first, wholemacro_sub.second, macro->second);
+			}
 		}
-
 		process_directives(line, to, relative_directory, settings);
 
 		if(!line.empty())
