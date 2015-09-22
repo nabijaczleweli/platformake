@@ -26,8 +26,11 @@
 #include <functional>
 #include <algorithm>
 #include <iostream>
+#define PCRE2_STATIC
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+#include <memory>
 #include <vector>
-#include <regex>
 #include <map>
 
 
@@ -48,16 +51,6 @@ static const vector<pair<const system_variants_t, const macros_t>> defaults({
 });
 
 
-static const regex & macro_regex(char macrochar) {
-	static map<char, regex> regices;
-
-	auto itr = regices.find(macrochar);
-	if(itr == regices.end())
-		itr = regices.emplace(macrochar, regex("("s + macrochar + "([A-Za-z0-9]+))", regex_constants::optimize)).first;
-	return itr->second;
-}
-
-
 macros_t & macros() {
 	static macros_t mcrs = []() {
 		macros_t toret;
@@ -72,27 +65,107 @@ macros_t & macros() {
 	return mcrs;
 }
 
+
+using stringrange       = pair<string::const_iterator, string::const_iterator>;
+using doublestringrange = pair<stringrange, stringrange>;
+
+
+static const doublestringrange emptydoublestringrange(const string & str) {
+	return {{str.end(), str.end()}, {str.end(), str.end()}};
+}
+
+
+struct pcre2_code_deleter {
+	void operator()(pcre2_code * rgx) const {
+		pcre2_code_free(rgx);
+	}
+};
+
+using regex_data_t = tuple<basic_string<PCRE2_UCHAR8>, int /*errorcode*/, PCRE2_SIZE /*erroffset*/>;
+using regex_t      = unique_ptr<pcre2_code, pcre2_code_deleter>;
+
+static regex_data_t & regex_data(char macrochar) {
+	static map<char, regex_data_t> data;
+
+	auto itr = data.find(macrochar);
+	if(itr == data.end())
+		itr = data.emplace(macrochar, regex_data_t(reinterpret_cast<PCRE2_SPTR8>(("("s + macrochar + "({)?([A-Za-z0-9]+)(?(2)}))").c_str()), 0, size_t(0))).first;
+	return itr->second;
+}
+
+static const regex_t & macro_regex(char macrochar) {
+	static map<char, regex_t> regices;
+
+	auto itr = regices.find(macrochar);
+	if(itr == regices.end()) {
+		auto & data          = regex_data(macrochar);
+		const auto & pattern = get<0>(data);
+		auto & errorcode     = get<1>(data);
+
+		itr = regices.emplace(macrochar, regex_t(pcre2_compile(pattern.c_str(), pattern.size(), 0, &errorcode, &get<2>(data), nullptr))).first;
+		if(!itr->second.get()) {
+			string buffer;
+			for(size_t i = 256;; i += 256) {
+				buffer.resize(i);
+				if(pcre2_get_error_message(errorcode, reinterpret_cast<PCRE2_UCHAR8 *>(&buffer[0]), buffer.size()) > 0)
+					break;
+			}
+			cerr << 'A' << ((static_cast<int>(errorcode) < 0) ? "n UTF formatting or matching error"s : " regex compilation error") << " (" << errorcode
+			     << ") occured\n";
+			throw runtime_error(buffer);
+		}
+	}
+	return itr->second;
+}
+
+struct pcre2_match_data_deleter {
+	void operator()(pcre2_match_data * rgx) const {
+		pcre2_match_data_free(rgx);
+	}
+};
+
 int process_macros(string & line, const settings_t & settings) {
-	smatch match;
-	while(regex_search(line, match, macro_regex(settings.macro_substitution_character))) {
-		const auto & wholemacro_sub = match[1];
-		const auto & macro_text     = match.str(2);
-		const auto macro            = macros().find(macro_text);
+	const auto & expr = macro_regex(settings.macro_substitution_character);
 
-		if(settings.verbose)
-			clog << "Found macro " << macro_text << " with";
-
-		if(macro == macros().end()) {
-			if(settings.verbose)
-				clog << "out a value\n";
-			cerr << settings.invocation_command << ": macro not found: \"" << macro_text << "\"\n";
-			return 3;
-		} else {
-			if(settings.verbose)
-				clog << " a value of " << macro->second << '\n';
-			line.replace(wholemacro_sub.first, wholemacro_sub.second, macro->second);
+	unique_ptr<pcre2_match_data, pcre2_match_data_deleter> match_data(pcre2_match_data_create(20, nullptr));
+	const int rc = pcre2_match(expr.get(), (PCRE2_SPTR8)line.c_str(), line.size(), 0, 0, match_data.get(), nullptr);
+	if(rc > 0) {
+		auto ovector = pcre2_get_ovector_pointer(match_data.get());
+		cout << "Match succeeded at offset " << ovector[0] << '\n';
+		/* Use ovector to get matched strings */
+		for(int i = 0; i < rc; i++) {
+			PCRE2_SPTR start = (PCRE2_SPTR8)line.c_str() + ovector[2 * i];
+			PCRE2_SIZE slen = ovector[2 * i + 1] - ovector[2 * i];
+			cout << i << ": " << string((char *)start, (int)slen) << '\n';
+			break;
 		}
 	}
 
 	return 0;
+}
+doublestringrange next_macro(const string & str, char macrochar) {
+	const auto begpos = str.find_first_of(macrochar);
+
+	if(begpos == string::npos)
+		return emptydoublestringrange(str);
+
+	const auto braces     = (str[begpos + 1] == '{');
+	const auto textbegpos = begpos + braces + 1;
+	auto endpos           = str.find_first_not_of("ABCDEFGHIJKLMOPQRSTUVWXYZ"
+	                                    "abcdefghijklmopqrstuvwxyz"
+	                                    "0123456789",
+	                                    textbegpos);
+
+	if(endpos == string::npos)
+		endpos = str.size() - 1;
+
+	const auto textendpos = endpos + braces;
+	endpos += braces;
+
+	if(textbegpos == textendpos && textendpos == endpos)  // nonmacro character (such as in "out/%.o : src/%.cpp")
+		return emptydoublestringrange(str);
+
+	cout << str[begpos] << ' ' << str[textbegpos] << ' ' << str[textendpos] << ' ' << str[endpos] << ' ' << boolalpha << braces << ' ' << str << '\n';
+
+	return {{str.begin() + begpos, str.begin() + endpos}, {str.begin() + textbegpos, str.begin() + textendpos}};
 }

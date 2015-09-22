@@ -36,6 +36,7 @@ SOURCE := src/
 BUILD := out/
 OBJDIR := $(BUILD)obj/
 INCLUDE := external/include/
+EXTOBJ := external/obj/
 
 STRIP := strip
 STRIPAR := --strip-all --remove-section=.comment --remove-section=.note

@@ -4,3 +4,6 @@
 [submodule "external/simpleopt"]
 	path = external/simpleopt
 	url = https://github.com/nabijaczleweli/simpleopt.git
+[submodule "external/pcre2"]
+	path = external/pcre2
+	url = https://github.com/crespyl/pcre2.git
