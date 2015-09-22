@@ -50,10 +50,10 @@ using system_variants_t = vector<system_variant_t>;
 
 
 static const vector<pair<const system_variants_t, const macros_t>> defaults({
-    {{system_variant_t::linux}, {{"system", "linux"}}},      //
-    {{system_variant_t::windows}, {{"system", "windows"}}},  //
-    {{system_variant_t::macosx}, {{"system", "macosx"}}},    //
-    {{}, {{"system", "system"}}},                            //
+    {{system_variant_t::linux}, {{"OS", "linux"}}},      //
+    {{system_variant_t::windows}, {{"OS", "windows"}}},  //
+    {{system_variant_t::macosx}, {{"OS", "macosx"}}},    //
+    {{}, {{"OS", "system"}}},                            //
 
     {{system_variant_t::windows}, {{"EXEC", ".exe"}}},  //
     {{}, {{"EXEC", ".out"}}}                            //
