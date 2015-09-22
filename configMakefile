@@ -24,10 +24,12 @@ ifeq "$(OS)" "Windows_NT"
 	EXE := .exe
 	nul := nul
 	FIND := busybox find
+	MAKEFILE_VARIANT := MinGW
 else
 	EXE := .out
 	nul := /dev/null
 	FIND := find
+	MAKEFILE_VARIANT := Unix
 endif
 
 OBJ := .o
