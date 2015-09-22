@@ -9,6 +9,7 @@ compiler:
 
 before_install:
   - if [ -n "$TRAVIS_PULL_REQUEST" ]; then openssl aes-256-cbc -K $encrypted_63c9d3fcdbeb_key -iv $encrypted_63c9d3fcdbeb_iv -in .dropbox_uploader.enc -out .dropbox_uploader -d; fi
+  - cmake --version
 
 install:
   - export COMPILER_NAME=$CC
@@ -33,3 +34,4 @@ addons:
     packages:
       - g++-5
       - clang-3.6
+      - ninja-build
