@@ -1,4 +1,4 @@
-# platformake [![Licence](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
+# platformake [![Licence](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE) [![Build Status](https://travis-ci.org/nabijaczleweli/platformake.svg?branch=master)](https://travis-ci.org/nabijaczleweli/platformake)
 A zero-effort pseudo-preprocessor for multiplatforming<sup>1</sup> Makefiles
 
 ## Libraries used
