@@ -20,6 +20,7 @@ install:
   - echo $CXX
 
 before_script :
+  - ./generate-macros.py
   - make deps
 
 script:
