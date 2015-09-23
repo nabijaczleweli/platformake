@@ -8,16 +8,15 @@ compiler:
 #  - clang
 
 before_install:
-  - if [ -n "$TRAVIS_PULL_REQUEST" ]; then openssl aes-256-cbc -K $encrypted_63c9d3fcdbeb_key -iv $encrypted_63c9d3fcdbeb_iv -in .dropbox_uploader.enc -out .dropbox_uploader -d; fi
+  - if [ -n "$TRAVIS_PULL_REQUEST" ]; then openssl aes-256-cbc -K $encrypted_63c9d3fcdbeb_key -iv $encrypted_63c9d3fcdbeb_iv -in .dropbox_uploader.enc -out .dropbox_uploader -d; fi 
   - export PATH=$HOME/bin:$PATH
-  - wget cmake.org/files/v3.3/cmake-3.3.2-Linux-x86_64.sh
+  - wget --no-clobber --directory-prefix="$HOME/download" cmake.org/files/v3.3/cmake-3.3.2-Linux-x86_64.sh
   - echo y | $SHELL cmake-3.3.2-Linux-x86_64.sh --prefix=$HOME --exclude-subdir
 
 install:
   - export COMPILER_NAME=$CC
   - if [ "$CXX" = "g++" ]; then export CXX=g++-5 CC=gcc-5; fi
 #  - if [ "$CXX" = "clang++" ]; then export CXX=clang++-3.7 CC=clang-3.7; fi
-  - echo $CXX
 
 before_script :
   - ./generate-macros.py
@@ -28,6 +27,11 @@ script:
 
 after_success:
   - if [ -n "$TRAVIS_PULL_REQUEST" ]; then ./deploy.sh; fi
+
+cache:
+  apt: true
+  directories:
+    - "$HOME/download"
 
 addons:
   apt:
