@@ -36,6 +36,11 @@
 			]
 		},
 		{
+			"follow_symlinks": true,
+			"name": "Macro definitions",
+			"path": "macros"
+		},
+		{
 			"file_include_patterns":
 			[
 				"*Makefile*"
