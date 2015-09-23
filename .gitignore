@@ -32,8 +32,11 @@
 out/
 test/out/
 external/include/
+external/obj/
+external/pcre2/build/
 
 *.sublime-toks
 *.sublime-workspace
 
 dropbox_uploader.sh
+.dropbox_uploader

@@ -22,6 +22,7 @@
 
 
 #include "macros.hpp"
+#include "util/scope.hpp"
 #include "sysprops.hpp"
 #include <functional>
 #include <algorithm>
@@ -32,6 +33,14 @@
 #include <memory>
 #include <vector>
 #include <map>
+
+
+#define PCRE2_DELETE_WRAPPER(tpe)              \
+	struct pcre2_##tpe##_deleter {               \
+		void operator()(pcre2_##tpe * arg) const { \
+			pcre2_##tpe##_free(arg);                 \
+		}                                          \
+	}  // no ;
 
 
 using namespace std;
@@ -66,20 +75,8 @@ macros_t & macros() {
 }
 
 
-using stringrange       = pair<string::const_iterator, string::const_iterator>;
-using doublestringrange = pair<stringrange, stringrange>;
-
-
-static const doublestringrange emptydoublestringrange(const string & str) {
-	return {{str.end(), str.end()}, {str.end(), str.end()}};
-}
-
-
-struct pcre2_code_deleter {
-	void operator()(pcre2_code * rgx) const {
-		pcre2_code_free(rgx);
-	}
-};
+PCRE2_DELETE_WRAPPER(code);
+PCRE2_DELETE_WRAPPER(match_data);
 
 using regex_data_t = tuple<basic_string<PCRE2_UCHAR8>, int /*errorcode*/, PCRE2_SIZE /*erroffset*/>;
 using regex_t      = unique_ptr<pcre2_code, pcre2_code_deleter>;
@@ -89,7 +86,7 @@ static regex_data_t & regex_data(char macrochar) {
 
 	auto itr = data.find(macrochar);
 	if(itr == data.end())
-		itr = data.emplace(macrochar, regex_data_t(reinterpret_cast<PCRE2_SPTR8>(("("s + macrochar + "({)?([A-Za-z0-9]+)(?(2)}))").c_str()), 0, size_t(0))).first;
+		itr = data.emplace(macrochar, regex_data_t(reinterpret_cast<PCRE2_SPTR8>(("("s + macrochar + "({)?([A-Za-z0-9_]+)(?(2)}))").c_str()), 0, size_t(0))).first;
 	return itr->second;
 }
 
@@ -118,54 +115,38 @@ static const regex_t & macro_regex(char macrochar) {
 	return itr->second;
 }
 
-struct pcre2_match_data_deleter {
-	void operator()(pcre2_match_data * rgx) const {
-		pcre2_match_data_free(rgx);
-	}
-};
-
 int process_macros(string & line, const settings_t & settings) {
 	const auto & expr = macro_regex(settings.macro_substitution_character);
 
 	unique_ptr<pcre2_match_data, pcre2_match_data_deleter> match_data(pcre2_match_data_create(20, nullptr));
-	const int rc = pcre2_match(expr.get(), (PCRE2_SPTR8)line.c_str(), line.size(), 0, 0, match_data.get(), nullptr);
-	if(rc > 0) {
-		auto ovector = pcre2_get_ovector_pointer(match_data.get());
-		cout << "Match succeeded at offset " << ovector[0] << '\n';
-		/* Use ovector to get matched strings */
-		for(int i = 0; i < rc; i++) {
-			PCRE2_SPTR start = (PCRE2_SPTR8)line.c_str() + ovector[2 * i];
-			PCRE2_SIZE slen = ovector[2 * i + 1] - ovector[2 * i];
-			cout << i << ": " << string((char *)start, (int)slen) << '\n';
+	for(;;) {
+		const int rc = pcre2_match(expr.get(), reinterpret_cast<PCRE2_SPTR8>(line.c_str()), line.size(), 0, 0, match_data.get(), nullptr);
+		if(rc <= 0)
 			break;
-		}
+
+		const auto ovector   = pcre2_get_ovector_pointer(match_data.get());
+		const auto mbeg      = ovector[0];
+		const auto mlen /**/ = ovector[1] - mbeg;
+
+		PCRE2_UCHAR * submatch{};
+		PCRE2_SIZE submatch_len{};
+		quickscope_wrapper submatch_scope{bind(pcre2_substring_free, ref(submatch))};
+		pcre2_substring_get_bynumber(match_data.get(), 3, &submatch, &submatch_len);
+		const string submatch_s(reinterpret_cast<char *>(submatch), submatch_len);
+
+		if(settings.verbose)
+			clog << "Found macro " << submatch_s << " with";
+
+		const auto macroitr = macros().find(submatch_s);
+		if(macroitr == macros().end()) {
+			if(settings.verbose)
+				clog << "out a value\n";
+
+			cerr << settings.invocation_command << ": macro not found: \"" << submatch_s << "\"\n";
+			return 3;
+		} else
+			line.replace(mbeg, mlen, macroitr->second);
 	}
 
 	return 0;
-}
-doublestringrange next_macro(const string & str, char macrochar) {
-	const auto begpos = str.find_first_of(macrochar);
-
-	if(begpos == string::npos)
-		return emptydoublestringrange(str);
-
-	const auto braces     = (str[begpos + 1] == '{');
-	const auto textbegpos = begpos + braces + 1;
-	auto endpos           = str.find_first_not_of("ABCDEFGHIJKLMOPQRSTUVWXYZ"
-	                                    "abcdefghijklmopqrstuvwxyz"
-	                                    "0123456789",
-	                                    textbegpos);
-
-	if(endpos == string::npos)
-		endpos = str.size() - 1;
-
-	const auto textendpos = endpos + braces;
-	endpos += braces;
-
-	if(textbegpos == textendpos && textendpos == endpos)  // nonmacro character (such as in "out/%.o : src/%.cpp")
-		return emptydoublestringrange(str);
-
-	cout << str[begpos] << ' ' << str[textbegpos] << ' ' << str[textendpos] << ' ' << str[endpos] << ' ' << boolalpha << braces << ' ' << str << '\n';
-
-	return {{str.begin() + begpos, str.begin() + endpos}, {str.begin() + textbegpos, str.begin() + textendpos}};
 }
