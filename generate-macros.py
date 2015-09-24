@@ -49,13 +49,10 @@ with open('src/gen/macro_defaults.cpp', 'w') as output:
 	output_begin_boilerplate(output)
 	alllines = []
 	for filename in os.listdir('macros'):
-		print filename
+		print('Found macro package "' + filename + '"')
 		with open('macros/' + filename, 'r') as file:
 			alllines += file.readlines() + ['\n']
 	for line in alllines[:-2]:
 		tokenize_and_output(line, filename, False, output)
 	tokenize_and_output(alllines[-2], filename, True, output)
 	output_end_boilerplate(output)
-
-#with open('src/gen/macro_defaults.hpp', 'w') as output:
-#	output_header(output)

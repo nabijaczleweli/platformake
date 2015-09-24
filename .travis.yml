@@ -35,4 +35,5 @@ addons:
       - llvm-toolchain-precise-3.6
     packages:
       - g++-5
+      - python3
       - clang-3.6
