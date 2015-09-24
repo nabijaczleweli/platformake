@@ -11,8 +11,8 @@ def try_prepend_typespec(name):
 		return ''
 
 def output_begin_boilerplate(to):
-	for custominclude in ['sysprops', 'macros']:
-		to.write('#include "' + custominclude + '.hpp"\n')
+	for custominclude in ['sysprops']:
+		to.write('#include "../' + custominclude + '.hpp"\n')
 	for stdinclude in ['utility', 'vector', 'map']:
 		to.write('#include <' + stdinclude + '>\n')
 	to.write('\n'
@@ -22,8 +22,11 @@ def output_begin_boilerplate(to):
 	         'using macros_t          = map<string, string>;\n'
 	         'using system_variants_t = vector<system_variant_t>;\n'
 	         '\n'
+	         'using macro_defaults_t = vector<pair<const system_variants_t, const macros_t>>;\n'
 	         '\n'
-	         'static const vector<pair<const system_variants_t, const macros_t>> defaults({\n')
+	         '\n');
+	for (prefix, suffix) in [('extern ', ';\n'), ('', '({')]:
+		to.write(prefix + 'const macro_defaults_t macro_defaults' + suffix + '\n')
 
 def output_end_boilerplate(to):
 	to.write('});\n')
@@ -37,7 +40,12 @@ def tokenize_and_output(line, name, islast, to):
 		to.write('\n')
 
 
-with open('asdf.cpp', 'w') as output:
+try:
+	os.mkdir('src/gen')
+except:
+	pass
+
+with open('src/gen/macro_defaults.cpp', 'w') as output:
 	output_begin_boilerplate(output)
 	alllines = []
 	for filename in os.listdir('macros'):
@@ -48,3 +56,6 @@ with open('asdf.cpp', 'w') as output:
 		tokenize_and_output(line, filename, False, output)
 	tokenize_and_output(alllines[-2], filename, True, output)
 	output_end_boilerplate(output)
+
+#with open('src/gen/macro_defaults.hpp', 'w') as output:
+#	output_header(output)

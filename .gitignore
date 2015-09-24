@@ -29,6 +29,7 @@
 
 
 # Our stuff
+src/gen/
 out/
 test/out/
 external/include/

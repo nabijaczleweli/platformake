@@ -22,7 +22,7 @@
 
 include configMakefile
 
-SOURCES := $(foreach src,$(shell $(FIND) $(SOURCE) -name *.cpp),$(subst $(SOURCE),,$(subst .cpp,,$(src))))
+SOURCES := $(foreach src,$(shell $(FIND) $(SOURCE) -name *.cpp),$(patsubst $(SOURCE)%.cpp,%,$(src)))
 
 .PHONY : clean all clean-all deps exe
 
@@ -33,13 +33,13 @@ clean :
 	rm -rf $(BUILD)
 
 clean-all : clean
-	rm -rf $(INCLUDE) $(EXTOBJ) external/pcre2/build
+	rm -rf $(SOURCE)gen $(INCLUDE) $(EXTOBJ) external/pcre2/build
 
 deps :
 	git submodule update --recursive --init
 	@rm -rf $(INCLUDE) external/pcre2/build 1>$(nul) 2>&1 || :
 	@mkdir $(INCLUDE) $(INCLUDE)tclap $(EXTOBJ) 1>$(nul) 2>&1 || :
-	cd external/pcre2 && mkdir build && cd build && cmake .. -G"Ninja" -DCMAKE_C_COMPILER="$(CC)" -DPCRE2_NEWLINE=ANY -DPCRE2_SUPPORT_JIT=ON -DPCRE2_BUILD_PCRE2GREP=OFF -DPCRE2_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release && ninja
+	cd external/pcre2 && mkdir build && cd build && cmake .. -G"Ninja" -DCMAKE_C_COMPILER="$(CC)" -DPCRE2_NEWLINE=ANYCRLF -DPCRE2_SUPPORT_JIT=ON -DPCRE2_BUILD_PCRE2GREP=OFF -DPCRE2_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release && ninja
 	cp external/tclap/include/tclap/*.h $(INCLUDE)tclap
 	cp external/pcre2/build/pcre2.h external/simpleopt/SimpleGlob.h $(INCLUDE)
 	cp external/pcre2/build/CMakeFiles/pcre2-8.dir/*.* external/pcre2/build/CMakeFiles/pcre2-8.dir/src/* $(EXTOBJ)
@@ -53,4 +53,4 @@ $(OBJDIR)%$(OBJ) : $(SOURCE)%.cpp
 	@mkdir -p $(dir $@) 1>$(nul) 2>&1
 	$(CXX) $(CXXAR) -c -o$@ $<
 
-$(foreach src,$(subst main,,$(SOURCES)),$(eval $(OBJDIR)$(src)$(OBJ) : $(SOURCE)$(src).hpp))
+$(foreach src,$(patsubst gen/%,,$(subst main,,$(SOURCES))),$(eval $(OBJDIR)$(src)$(OBJ) : $(SOURCE)$(src).hpp))
