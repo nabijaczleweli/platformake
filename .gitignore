@@ -34,7 +34,7 @@ out/
 test/out/
 external/include/
 external/obj/
-external/pcre2/build/
+external/*-build/
 
 *.sublime-toks
 *.sublime-workspace

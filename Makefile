@@ -27,22 +27,22 @@ SOURCES := $(foreach src,$(shell $(FIND) $(SOURCE) -name *.cpp),$(patsubst $(SOU
 .PHONY : clean all clean-all deps exe
 
 all : exe
-	echo asdf%{EXEC}asdf %EXEC $(NESTEDEXE) %OS
+	echo asdf%{EXEC}asdf %EXEC $(NESTEDEXE) %OS %NULL
 
 clean :
 	rm -rf $(BUILD)
 
 clean-all : clean
-	rm -rf $(SOURCE)gen $(INCLUDE) $(EXTOBJ) external/pcre2/build
+	rm -rf $(SOURCE)gen $(INCLUDE) $(EXTOBJ) external/*-build
 
 deps :
 	git submodule update --recursive --init
-	@rm -rf $(EXTOBJ) $(INCLUDE) external/pcre2/build 1>$(nul) 2>&1 || :
+	@rm -rf $(EXTOBJ) $(INCLUDE) external/*-build 1>$(nul) 2>&1 || :
 	@mkdir $(INCLUDE) $(INCLUDE)tclap $(EXTOBJ) 1>$(nul) 2>&1 || :
-	cd external/pcre2 && mkdir build && cd build && cmake .. -G"$(MAKEFILE_VARIANT) Makefiles" -DCMAKE_C_COMPILER="$(CC)" -DPCRE2_NEWLINE=ANY -DPCRE2_SUPPORT_JIT=ON -DPCRE2_BUILD_PCRE2GREP=OFF -DPCRE2_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release && $(MAKE) --no-print-directory -j 2
+	cd external && mkdir pcre2-build && cd pcre2-build && cmake ../pcre2 -G"$(MAKEFILE_VARIANT) Makefiles" -DCMAKE_C_COMPILER="$(CC)" -DPCRE2_NEWLINE=ANY -DPCRE2_SUPPORT_JIT=ON -DPCRE2_BUILD_PCRE2GREP=OFF -DPCRE2_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release && $(MAKE) --no-print-directory -j 2
 	cp external/tclap/include/tclap/*.h $(INCLUDE)tclap
-	cp external/pcre2/build/pcre2.h external/simpleopt/SimpleGlob.h $(INCLUDE)
-	cp external/pcre2/build/CMakeFiles/pcre2-8.dir/pcre2_*.* external/pcre2/build/CMakeFiles/pcre2-8.dir/src/pcre2_* $(EXTOBJ)
+	cp external/pcre2-build/pcre2.h external/simpleopt/SimpleGlob.h $(INCLUDE)
+	cp external/pcre2-build/CMakeFiles/pcre2-8.dir/pcre2_*.* external/pcre2-build/CMakeFiles/pcre2-8.dir/src/pcre2_* $(EXTOBJ)
 
 exe : $(foreach src,$(SOURCES),$(OBJDIR)$(src)$(OBJ))
 	$(CXX) $(CXXAR) -o$(BUILD)platformake$(EXE) $(EXTOBJ)* $^

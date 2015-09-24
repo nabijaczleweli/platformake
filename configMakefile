@@ -24,7 +24,7 @@ ifeq "$(OS)" "Windows_NT"
 	EXE := .exe
 	nul := nul
 	FIND := busybox find
-	MAKEFILE_VARIANT := MinGW
+	MAKEFILE_VARIANT := MSYS
 else
 	EXE := .out
 	nul := /dev/null
