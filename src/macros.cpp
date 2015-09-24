@@ -30,6 +30,7 @@
 #define PCRE2_STATIC
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
+#include <utility>
 #include <memory>
 #include <vector>
 #include <map>
