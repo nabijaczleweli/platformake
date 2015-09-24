@@ -1,8 +1,7 @@
 version: '{build}'
 os: MinGW
 build_script:
-  - 'dir C:\'
-  - 'dir C:\Python35-x64\'
-  - 'C:\Python35-x64\python -v generate-macros.py'
+  - 'dir C:\Python34-x64\'
+  - 'C:\Python34-x64\python -v generate-macros.py'
   - make deps
   - make
