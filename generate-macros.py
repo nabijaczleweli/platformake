@@ -51,8 +51,8 @@ with open('src/gen/macro_defaults.cpp', 'w') as output:
 	for filename in os.listdir('macros'):
 		print('Found macro package "' + filename + '"')
 		with open('macros/' + filename, 'r') as file:
-			alllines += file.readlines() + ['\n']
-	for line in alllines[:-2]:
-		tokenize_and_output(line, filename, False, output)
-	tokenize_and_output(alllines[-2], filename, True, output)
+			alllines += map(lambda line: (line, filename), file.readlines() + ['\n'])
+	for linefname in alllines[:-2]:
+		tokenize_and_output(linefname[0], linefname[1], False, output)
+	tokenize_and_output(alllines[-2][0], alllines[-2][1], True, output)
 	output_end_boilerplate(output)
