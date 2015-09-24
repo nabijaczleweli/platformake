@@ -7,7 +7,7 @@ A zero-effort pseudo-preprocessor for multiplatforming<sup>1</sup> Makefiles
 3. [`pcre2`](http://www.pcre.org) for Perl-compatible regular expressions
 
 ## Building
-Building requires [GNU Make](https://www.gnu.org/software/make) for main files as well as [CMake](http://www.cmake.org) and [`ninja`](https://martine.github.io/ninja) for building `pcre2`.
+Building requires [GNU Make](https://www.gnu.org/software/make) for main files and [CMake](http://www.cmake.org) for building `pcre2`.
 
 Before building the project for the first time run `generate-macros.py` with a [Python 3 interperter](https://www.python.org) to generate the default macros and `make deps`, which will build and copy over all the dependencies used.<br />
 To build it all the subsequent times just run `make`
