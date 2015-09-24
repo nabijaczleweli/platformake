@@ -1,16 +1,8 @@
 version: '{build}'
 os: MinGW
-install:
-#  - appveyor DownloadFile https://cmake.org/files/v3.3/cmake-3.3.2-win32-x86.zip
-  - appveyor DownloadFile https://www.python.org/ftp/python/3.5.0/python-3.5.0-embed-amd64.zip
-#  - 7z -y           x cmake-3.3.2-win32-x86.zip
-  - 7z -y -opython3 x python-3.5.0-embed-amd64.zip
-#  - cmake --version
-#  - del /F /S /Q "C:\Program Files (x86)\CMake"
-#  - move /Y cmake-3.3.2-win32-x86 "C:\Program Files (x86)\CMake"
-  - move /Y python3 "C:\Program Files (x86)\Python3"
-#  - cmake --version
 build_script:
-  - '"C:\Program Files (x86)\Python3\python" -v generate-macros.py'
+  - 'dir C:\'
+  - 'dir C:\Python35-x64\'
+  - 'C:\Python35-x64\python -v generate-macros.py'
   - make deps
   - make
