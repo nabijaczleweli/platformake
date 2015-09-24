@@ -4,6 +4,18 @@
 		{
 			"cmd": "make --no-print-directory -C\"$project_path\" all",
 			"name": "Build platformake"
+		},
+		{
+			"cmd": "make --no-print-directory -C\"$project_path\" deps",
+			"name": "Build platformake's dependencies"
+		},
+		{
+			"cmd": "make --no-print-directory -C\"$project_path\" clean",
+			"name": "Clean platformake's build output"
+		},
+		{
+			"cmd": "make --no-print-directory -C\"$project_path\" clean-all",
+			"name": "Clean platformake and its dependencies' build output"
 		}
 	],
 	"folders":
